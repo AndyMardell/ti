@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# coding=utf-8
 import io
 import sys
 
@@ -20,19 +21,14 @@ testing = bool({"pytest", "test"}.intersection(sys.argv))
 setup(
     name="ti",
     version="0.1.2.dev0",
-    author="Shrikant Sharat & Trevor Bekolay",
+    author="Shrikant Sharat, Trevor Bekolay, Marcus Schütte",
     author_email="tbekolay@gmail.com",
     packages=find_packages(),
     include_package_data=True,
-    scripts=[],
+    scripts=["bin/ti"],
     url="http://ti.sharats.me/",
     description="A silly simple time tracker",
     long_description=read("README.rst", "CHANGES.rst"),
-    entry_points={
-        "console_scripts": [
-            "ti = ti:main",
-        ]
-    },
     install_requires=["colorama", "pyyaml"],
     setup_requires=["pytest-runner"] if testing else [],
     tests_require=["pytest", "cram", "pytest-cram"],

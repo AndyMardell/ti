@@ -1,0 +1,12 @@
+#!/usr/bin/env python
+from __future__ import print_function
+import sys
+import ti
+
+try:
+    fn, args = ti.parse_args()
+    fn(**args)
+except ti.TIError as e:
+    msg = str(e) if len(str(e)) > 0 else __doc__
+    print(msg, file=sys.stderr)
+    sys.exit(1)

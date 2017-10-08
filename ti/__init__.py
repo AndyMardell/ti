@@ -462,20 +462,6 @@ def parse_args(argv=sys.argv):
 
     return fn, args
 
-
-def main():
-    try:
-        fn, args = parse_args()
-        fn(**args)
-    except TIError as e:
-        msg = str(e) if len(str(e)) > 0 else __doc__
-        print(msg, file=sys.stderr)
-        sys.exit(1)
-
-
 store = JsonStore(os.getenv('SHEET_FILE', None) or
                   os.path.expanduser('~/.ti-sheet'))
 use_color = True
-
-if __name__ == '__main__':
-    main()
