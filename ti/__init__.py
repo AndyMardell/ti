@@ -121,16 +121,17 @@ def action_on(name, time):
     data = store.load()
     work = data['work']
 
-    if work and 'end' not in work[-1]:
+    if work and work[-1].is_current():
         raise AlreadyOn("You are already working on %s. Stop it or use a "
                         "different sheet." % (yellow(work[-1]['name']),))
 
+    #TODO: work directly on timelog objects here
     entry = {
         'name': name,
         'start': time,
     }
 
-    work.append(entry)
+    work.append(time_store.TimeLog(entry))
     store.dump(data)
 
     print('Start working on ' + green(name) + '.')
@@ -214,11 +215,11 @@ def action_status():
     data = store.load()
     current = data['work'][-1]
 
-    start_time = parse_isotime(current['start'])
+    start_time = current.get_start()
     diff = timegap(start_time, datetime.utcnow())
 
     print('You have been working on {0} for {1}.'.format(
-        green(current['name']), diff))
+        green(current.get_name()), diff))
 
 
 def action_log(period):
@@ -228,13 +229,9 @@ def action_log(period):
     current = None
 
     for item in work:
-        start_time = parse_isotime(item['start'])
-        if 'end' in item:
-            log[item['name']]['delta'] += (
-                parse_isotime(item['end']) - start_time)
-        else:
-            log[item['name']]['delta'] += datetime.utcnow() - start_time
-            current = item['name']
+        log[item.get_name()]["delta"] = item.get_delta()
+        if item.is_current():
+            current = item.get_name()
 
     name_col_len = 0
 
@@ -294,7 +291,7 @@ def action_edit():
 
 def is_working():
     data = store.load()
-    return data.get('work') and 'end' not in data['work'][-1]
+    return data.get('work') and data['work'][-1].is_current()
 
 
 def ensure_working():
@@ -336,10 +333,6 @@ def parse_engtime(timestr):
         return now - timedelta(hours=hours)
 
     raise BadTime("Don't understand the time %r" % (timestr,))
-
-
-def parse_isotime(isotime):
-    return datetime.strptime(isotime, '%Y-%m-%dT%H:%M:%S.%fZ')
 
 
 def timegap(start_time, end_time):
