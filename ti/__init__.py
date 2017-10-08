@@ -29,7 +29,6 @@ Options:
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import json
 import os
 import re
 import subprocess
@@ -37,11 +36,11 @@ import sys
 import tempfile
 from datetime import datetime, timedelta
 from collections import defaultdict
-from os import path
 
 import yaml
 from colorama import Fore
 
+import time_store
 
 class TIError(Exception):
     """Errors raised by TI."""
@@ -70,26 +69,6 @@ class BadTime(TIError):
 class BadArguments(TIError):
     """The command line arguments passed are not valid."""
 
-
-class JsonStore(object):
-
-    def __init__(self, filename):
-        self.filename = filename
-
-    def load(self):
-
-        if path.exists(self.filename):
-            with open(self.filename) as f:
-                data = json.load(f)
-
-        else:
-            data = {'work': [], 'interrupt_stack': []}
-
-        return data
-
-    def dump(self, data):
-        with open(self.filename, 'w') as f:
-            json.dump(data, f, separators=(',', ': '), indent=2)
 
 
 def red(str):
@@ -462,6 +441,6 @@ def parse_args(argv=sys.argv):
 
     return fn, args
 
-store = JsonStore(os.getenv('SHEET_FILE', None) or
+store = time_store.JsonStore(os.getenv('SHEET_FILE', None) or
                   os.path.expanduser('~/.ti-sheet'))
 use_color = True
