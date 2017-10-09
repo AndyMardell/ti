@@ -3,8 +3,8 @@ from datetime import datetime
 from utils import parse_isotime
 import os
 
-class JsonStore(object):
 
+class JsonStore(object):
     def __init__(self, filename):
         self.filename = filename
 

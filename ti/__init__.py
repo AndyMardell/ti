@@ -97,7 +97,7 @@ def action_on(name, time):
 
     if work and work[-1].is_current():
         raise AlreadyOn("You are already working on %s. Stop it or use a "
-                        "different sheet." % (yellow(work[-1]['name']),))
+                        "different sheet." % (yellow(work[-1].get_name()),))
 
     #TODO: work directly on timelog objects here
     entry = {
@@ -117,12 +117,12 @@ def action_fin(time, back_from_interrupt=True):
     data = store.load()
 
     current = data['work'][-1]
-    current['end'] = time
+    current.json_item["end"] = time
     store.dump(data)
-    print('So you stopped working on ' + red(current['name']) + '.')
+    print('So you stopped working on ' + red(current.get_name()) + '.')
 
     if back_from_interrupt and len(data['interrupt_stack']) > 0:
-        name = data['interrupt_stack'].pop()['name']
+        name = data['interrupt_stack'].pop().get_name()
         store.dump(data)
         action_on(name, time)
         if len(data['interrupt_stack']) > 0:
@@ -163,7 +163,7 @@ def action_note(content):
 
     store.dump(data)
 
-    print('Yep, noted to ' + yellow(current['name']) + '.')
+    print('Yep, noted to ' + yellow(current.get_name()) + '.')
 
 
 def action_tag(tags):
