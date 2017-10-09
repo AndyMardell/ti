@@ -44,33 +44,11 @@ class BadArguments(TIError):
     """The command line arguments passed are not valid."""
 
 
-
-def red(str):
+def color_string(color, text):
     if use_color:
-        return Fore.RED + str + Fore.RESET
+        return color + text + Fore.RESET
     else:
-        return str
-
-
-def green(str):
-    if use_color:
-        return Fore.GREEN + str + Fore.RESET
-    else:
-        return str
-
-
-def yellow(str):
-    if use_color:
-        return Fore.YELLOW + str + Fore.RESET
-    else:
-        return str
-
-
-def blue(str):
-    if use_color:
-        return Fore.BLUE + str + Fore.RESET
-    else:
-        return str
+        return text
 
 
 color_regex = re.compile("(\x9B|\x1B\\[)[0-?]*[ -\/]*[@-~]")
@@ -108,7 +86,7 @@ def action_on(name, time):
     work.append(time_store.TimeLog(entry))
     store.dump(data)
 
-    print('Start working on ' + green(name) + '.')
+    print('Start working on ' + color_string(Fore.GREEN, name) + '.')
 
 
 def action_fin(time, back_from_interrupt=True):
@@ -119,7 +97,7 @@ def action_fin(time, back_from_interrupt=True):
     current = data['work'][-1]
     current.json_item["end"] = time
     store.dump(data)
-    print('So you stopped working on ' + red(current.get_name()) + '.')
+    print('So you stopped working on ' + color_string(Fore.RED, current.get_name()) + '.')
 
     if back_from_interrupt and len(data['interrupt_stack']) > 0:
         name = data['interrupt_stack'].pop().get_name()
@@ -146,7 +124,7 @@ def action_interrupt(name, time):
     interrupt_stack.append(interrupted)
     store.dump(data)
 
-    action_on('interrupt: ' + green(name), time)
+    action_on('interrupt: ' + color_string(Fore.GREEN, name), time)
     print('You are now %d deep in interrupts.' % len(interrupt_stack))
 
 
@@ -163,7 +141,7 @@ def action_note(content):
 
     store.dump(data)
 
-    print('Yep, noted to ' + yellow(current.get_name()) + '.')
+    print('Yep, noted to ' + color_string(Fore.YELLOW, current.get_name()) + '.')
 
 
 def action_tag(tags):
@@ -193,7 +171,7 @@ def action_status():
     diff = timegap(start_time, datetime.utcnow())
 
     print('You have been working on {0} for {1}.'.format(
-        green(current.get_name()), diff))
+        color_string(Fore.GREEN, current.get_name()), diff))
 
 
 def action_log(period):
@@ -407,6 +385,7 @@ def parse_args(argv=sys.argv):
         raise BadArguments("I don't understand %r" % (head,))
 
     return fn, args
+
 
 store = time_store.JsonStore(os.getenv('SHEET_FILE', None) or
                   os.path.expanduser('~/.ti-sheet'))
