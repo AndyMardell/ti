@@ -29,6 +29,7 @@ class TiWorkingAction(TiAction):
                      "I don't know what to do.\n"                     "See `ti -h` to know how to start working.")
 
 
+
 class TiNotWorkingAction(TiAction):
     def _verify_status(self, work_data, interrupt_data):
         if work_data and work_data[-1].is_current():
@@ -65,52 +66,6 @@ class TiActionFin(TiWorkingAction):
             else:
                 print('Congrats, you\'re out of interrupts!')
         store.dump(work_data, interrupt_data)
-
-
-
-
-
-
-def action_on(name, time):
-    data = store.load()
-    work = data['work']
-
-    if work and work[-1].is_current():
-        raise AlreadyOn("You are already working on %s. Stop it or use a "
-                        "different sheet." % (yellow(work[-1].get_name()),))
-
-    #TODO: work directly on timelog objects here
-    entry = {
-        'name': name,
-        'start': time,
-    }
-
-    work.append(time_store.TimeLog(entry))
-    store.dump(data)
-
-    print('Start working on ' + color_string(Fore.GREEN, name) + '.')
-
-
-def action_fin(time, back_from_interrupt=True):
-    ensure_working()
-
-    data = store.load()
-
-    current = data['work'][-1]
-    current.json_item["end"] = time
-    store.dump(data)
-    print('So you stopped working on ' + color_string(Fore.RED, current.get_name()) + '.')
-
-    if back_from_interrupt and len(data['interrupt_stack']) > 0:
-        name = data['interrupt_stack'].pop().get_name()
-        store.dump(data)
-        action_on(name, time)
-        if len(data['interrupt_stack']) > 0:
-            print('You are now %d deep in interrupts.'
-                  % len(data['interrupt_stack']))
-        else:
-            print('Congrats, you\'re out of interrupts!')
-
 
 def action_interrupt(name, time):
     ensure_working()
