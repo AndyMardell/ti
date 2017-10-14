@@ -21,10 +21,10 @@ class JsonStore(object):
 
         time_data = {'work': [], 'interrupt_stack': []}
         for log in json_data["work"]:
-            time_data["work"].append(TimeLog(log))
+            time_data["work"].append(TimeLog(log, self))
 
         for log in json_data["interrupt_stack"]:
-            time_data["interrupt_stack"].append(TimeLog(log))
+            time_data["interrupt_stack"].append(TimeLog(log, self))
 
         self.work_data = time_data["work"]
         self.interrupt_data = time_data["interrupt_stack"]
@@ -46,7 +46,7 @@ class JsonStore(object):
             'name': name,
             'start': time,
         }
-        self.work_data.append(TimeLog(entry))
+        self.work_data.append(TimeLog(entry, self))
         self.dump()
 
     def end_work(self, time):
@@ -65,8 +65,9 @@ class JsonStore(object):
 
 
 class TimeLog(object):
-    def __init__(self, json_item):
+    def __init__(self, json_item, store):
         self.json_item = json_item
+        self.store = store
 
     def get_name(self):
         return self.json_item["name"];
@@ -88,3 +89,12 @@ class TimeLog(object):
             return False
         else:
             return True
+
+    def add_note(self, content):
+        if 'notes' not in self.json_item:
+            self.json_item['notes'] = [content]
+        else:
+            self.json_item['notes'].append(content)
+
+        self.store.dump()
+

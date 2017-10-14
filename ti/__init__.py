@@ -74,7 +74,7 @@ def parse_args(argv=sys.argv):
         if not tail:
             raise BadArguments("Please provide some text to be noted.")
 
-        fn = action_note
+        fn = TiActionNote(text_color)
         args = {'content': ' '.join(tail)}
 
     elif head in ['i', 'interrupt']:

@@ -120,20 +120,12 @@ class TiActionLog(TiAction):
             print(colors.ljust_with_color(name, name_col_len), ' ∙∙ ', item['tmsg'], end)
 
 
-def action_note(content):
-    ensure_working()
+class TiActionNote(TiWorkingAction):
+    def _run(self, store,  work_data, interrupt_data, args):
+        current = store.get_current_item()
+        current.add_note(args["content"])
 
-    data = store.load()
-    current = data['work'][-1]
-
-    if 'notes' not in current:
-        current['notes'] = [content]
-    else:
-        current['notes'].append(content)
-
-    store.dump(data)
-
-    print('Yep, noted to ' + color_string(Fore.YELLOW, current.get_name()) + '.')
+        print('Yep, noted to ' + self.ti_colors.color_string(Fore.YELLOW, current.get_name()) + '.')
 
 
 def action_tag(tags):
