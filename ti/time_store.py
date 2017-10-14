@@ -98,3 +98,8 @@ class TimeLog(object):
 
         self.store.dump()
 
+    def add_tags(self, tags):
+        self.json_item['tags'] = set(self.json_item.get('tags') or [])
+        self.json_item['tags'].update(tags)
+        self.json_item['tags'] = list(self.json_item['tags'])
+        self.store.dump()

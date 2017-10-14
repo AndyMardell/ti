@@ -67,7 +67,7 @@ def parse_args(argv=sys.argv):
         if not tail:
             raise BadArguments("Please provide at least one tag to add.")
 
-        fn = action_tag
+        fn = TiActionTag(text_color)
         args = {'tags': tail}
 
     elif head in ['n', 'note']:

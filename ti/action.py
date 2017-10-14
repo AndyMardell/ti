@@ -128,21 +128,15 @@ class TiActionNote(TiWorkingAction):
         print('Yep, noted to ' + self.ti_colors.color_string(Fore.YELLOW, current.get_name()) + '.')
 
 
-def action_tag(tags):
-    ensure_working()
+class TiActionTag(TiWorkingAction):
+    def _run(self, store,  work_data, interrupt_data, args):
+        current = store.get_current_item()
+        current.add_tags(args["tags"])
 
-    data = store.load()
-    current = data['work'][-1]
+        tag_count = len(args["tags"])
+        print("Okay, tagged current work with %d tag%s."
+              % (tag_count, "s" if tag_count > 1 else ""))
 
-    current['tags'] = set(current.get('tags') or [])
-    current['tags'].update(tags)
-    current['tags'] = list(current['tags'])
-
-    store.dump(data)
-
-    tag_count = len(tags)
-    print("Okay, tagged current work with %d tag%s."
-          % (tag_count, "s" if tag_count > 1 else ""))
 
 def action_edit():
     if "EDITOR" not in os.environ:
