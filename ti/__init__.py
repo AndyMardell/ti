@@ -56,7 +56,7 @@ def parse_args(argv=sys.argv):
         args = {'time': to_datetime(' '.join(tail))}
 
     elif head in ['s', 'status']:
-        fn = action_status
+        fn = TiActionStatus(colors.TiColorText(use_color))
         args = {}
 
     elif head in ['l', 'log']:

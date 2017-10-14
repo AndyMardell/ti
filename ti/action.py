@@ -66,7 +66,7 @@ class TiActionInterrupt(TiWorkingAction):
         print('You are now %d deep in interrupts.' % len(interrupt_data))
 
 
-class TiActionSatus(TiWorkingAction):
+class TiActionStatus(TiWorkingAction):
     def _run(self, store,  work_data, interrupt_data, args):
         current = store.get_current_item()
         start_time = current.get_start()
