@@ -29,14 +29,14 @@ class TiWorkingAction(TiAction):
                      "I don't know what to do.\n"                     "See `ti -h` to know how to start working.")
 
 
-class TiNotWorkingAction(TiAction):
+class TiIdleAction(TiAction):
     def _verify_status(self, work_data, interrupt_data):
         if work_data and work_data[-1].is_current():
             raise AlreadyOn("You are already working on %s. Stop it or use a "
                             "different sheet." % self.ti_colors.color_string(Fore.YELLOW, work_data[-1].get_name()))
 
 
-class TiActionOn(TiNotWorkingAction):
+class TiActionOn(TiIdleAction):
     def _run(self, store,  work_data, interrupt_data, args):
         store.start_work(args["name"], args["time"])
         print('Start working on ' + self.ti_colors.color_string(Fore.GREEN, args["name"]) + '.')
