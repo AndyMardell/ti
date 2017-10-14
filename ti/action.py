@@ -108,20 +108,6 @@ def action_tag(tags):
     print("Okay, tagged current work with %d tag%s."
           % (tag_count, "s" if tag_count > 1 else ""))
 
-
-def action_status():
-    ensure_working()
-
-    data = store.load()
-    current = data['work'][-1]
-
-    start_time = current.get_start()
-    diff = timegap(start_time, datetime.utcnow())
-
-    print('You have been working on {0} for {1}.'.format(
-        color_string(Fore.GREEN, current.get_name()), diff))
-
-
 def action_log(period):
     data = store.load()
     work = data['work'] + data['interrupt_stack']
