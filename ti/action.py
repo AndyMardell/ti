@@ -1,7 +1,14 @@
+# coding: utf-8
+from __future__ import print_function
+from __future__ import unicode_literals
+
 from ti_exceptions import *
 from colorama import Fore
 from datetime import timedelta
 from utils import *
+from collections import defaultdict
+import colors
+
 
 class TiAction(object):
     def __init__(self, ti_colors):
@@ -18,7 +25,7 @@ class TiAction(object):
         raise NotImplementedError
 
     def _verify_status(self, work_data, interrupt_data):
-        raise NotImplementedError
+        pass
 
 
 class TiWorkingAction(TiAction):
@@ -76,6 +83,43 @@ class TiActionStatus(TiWorkingAction):
             self.ti_colors.color_string(Fore.GREEN, current.get_name()), diff))
 
 
+class TiActionLog(TiAction):
+    def _run(self, store,  work_data, interrupt_data, args):
+        work = work_data + interrupt_data
+        log = defaultdict(lambda: {'delta': timedelta()})
+        current = store.get_current_item().get_name()
+
+        for item in work:
+            log[item.get_name()]["delta"] = item.get_delta()
+
+        name_col_len = 0
+
+        for name, item in log.items():
+            name_col_len = max(name_col_len, len(colors.strip_color(name)))
+
+            secs = item['delta'].total_seconds()
+            tmsg = []
+
+            if secs > 3600:
+                hours = int(secs / 3600)
+                secs -= hours * 3600
+                tmsg.append(str(hours) + ' hour' + ('s' if hours > 1 else ''))
+
+            if secs > 60:
+                mins = int(secs / 60)
+                secs -= mins * 60
+                tmsg.append(str(mins) + ' minute' + ('s' if mins > 1 else ''))
+
+            if secs:
+                tmsg.append(str(secs) + ' second' + ('s' if secs > 1 else ''))
+
+            log[name]['tmsg'] = ', '.join(tmsg)[::-1].replace(',', '& ', 1)[::-1]
+
+        for name, item in sorted(log.items(), key=(lambda x: x[1]), reverse=True):
+            end = ' ← working' if current == name else ''
+            print(colors.ljust_with_color(name, name_col_len), ' ∙∙ ', item['tmsg'], end)
+
+
 def action_note(content):
     ensure_working()
 
@@ -107,45 +151,6 @@ def action_tag(tags):
     tag_count = len(tags)
     print("Okay, tagged current work with %d tag%s."
           % (tag_count, "s" if tag_count > 1 else ""))
-
-def action_log(period):
-    data = store.load()
-    work = data['work'] + data['interrupt_stack']
-    log = defaultdict(lambda: {'delta': timedelta()})
-    current = None
-
-    for item in work:
-        log[item.get_name()]["delta"] = item.get_delta()
-        if item.is_current():
-            current = item.get_name()
-
-    name_col_len = 0
-
-    for name, item in log.items():
-        name_col_len = max(name_col_len, len(strip_color(name)))
-
-        secs = item['delta'].total_seconds()
-        tmsg = []
-
-        if secs > 3600:
-            hours = int(secs / 3600)
-            secs -= hours * 3600
-            tmsg.append(str(hours) + ' hour' + ('s' if hours > 1 else ''))
-
-        if secs > 60:
-            mins = int(secs / 60)
-            secs -= mins * 60
-            tmsg.append(str(mins) + ' minute' + ('s' if mins > 1 else ''))
-
-        if secs:
-            tmsg.append(str(secs) + ' second' + ('s' if secs > 1 else ''))
-
-        log[name]['tmsg'] = ', '.join(tmsg)[::-1].replace(',', '& ', 1)[::-1]
-
-#    for name, item in sorted(log.items(), key=(lambda x: x[1]), reverse=True):
-#        print(ljust_with_color(name, name_col_len), ' ∙∙ ', item['tmsg'],
-#              end=' ← working\n' if current == name else '\n')
-
 
 def action_edit():
     if "EDITOR" not in os.environ:

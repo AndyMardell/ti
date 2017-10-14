@@ -8,7 +8,6 @@ import subprocess
 import sys
 import tempfile
 from datetime import datetime, timedelta
-from collections import defaultdict
 from action import *
 import yaml
 import re
@@ -27,6 +26,7 @@ def parse_args(argv=sys.argv):
         use_color = False
         argv.remove('--no-color')
 
+    text_color = colors.TiColorText(use_color)
     # prog = argv[0]
     if len(argv) == 1:
         raise BadArguments("You must specify a command.")
@@ -45,22 +45,22 @@ def parse_args(argv=sys.argv):
         if not tail:
             raise BadArguments("Need the name of whatever you are working on.")
 
-        fn = TiActionOn(colors.TiColorText(use_color))
+        fn = TiActionOn(text_color)
         args = {
             'name': tail[0],
             'time': to_datetime(' '.join(tail[1:])),
         }
 
     elif head in ['f', 'fin']:
-        fn = TiActionFin(colors.TiColorText(use_color))
+        fn = TiActionFin(text_color)
         args = {'time': to_datetime(' '.join(tail))}
 
     elif head in ['s', 'status']:
-        fn = TiActionStatus(colors.TiColorText(use_color))
+        fn = TiActionStatus(text_color)
         args = {}
 
     elif head in ['l', 'log']:
-        fn = action_log
+        fn = TiActionLog(text_color)
         args = {'period': tail[0] if tail else None}
 
     elif head in ['t', 'tag']:
@@ -81,7 +81,7 @@ def parse_args(argv=sys.argv):
         if not tail:
             raise BadArguments("Need the name of whatever you are working on.")
 
-        fn = TiActionInterrupt(colors.TiColorText(use_color))
+        fn = TiActionInterrupt(text_color)
         args = {
             'name': tail[0],
             'time': to_datetime(' '.join(tail[1:])),
