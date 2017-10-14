@@ -1,7 +1,7 @@
-import time_store
 from ti_exceptions import *
 from colorama import Fore
-
+from datetime import timedelta
+from utils import *
 
 class TiAction(object):
     def __init__(self, ti_colors):
@@ -64,6 +64,15 @@ class TiActionInterrupt(TiWorkingAction):
         store.add_interruption()
         store.start_work('interrupt: ' + self.ti_colors.color_string(Fore.GREEN, args["name"]), args["time"])
         print('You are now %d deep in interrupts.' % len(interrupt_data))
+
+class TiActionSatus(TiWorkingAction):
+    def _run(self, store,  work_data, interrupt_data, args):
+        current = store.get_current_item()
+        start_time = current.get_start()
+        diff = timegap(start_time, datetime.utcnow())
+
+        print('You have been working on {0} for {1}.'.format(
+            self.ti_colors.color_string(Fore.GREEN, current.get_name()), diff))
 
 
 def action_note(content):
