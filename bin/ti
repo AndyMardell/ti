@@ -28,10 +28,14 @@ Options:
 from __future__ import print_function
 import sys
 import ti
+import os
 
 try:
+    store = ti.time_store.JsonStore(os.getenv('SHEET_FILE', None) or
+                                 os.path.expanduser('~/.ti-sheet'))
     fn, args = ti.parse_args()
-    fn(**args)
+    #fn(**args)
+    fn.execute_action(store, args)
 except ti.TIError as e:
     msg = str(e) if len(str(e)) > 0 else __doc__
     print(msg, file=sys.stderr)

@@ -26,12 +26,12 @@ class JsonStore(object):
 
         return time_data
 
-    def dump(self, data):
+    def dump(self, work_data, interrupt_data):
         json_data = {'work': [], 'interrupt_stack': []}
-        for log in data["work"]:
+        for log in work_data:
             json_data["work"].append(log.json_item)
 
-        for log in data["interrupt_stack"]:
+        for log in interrupt_data:
             json_data["interrupt_stack"].append(log.json_item)
 
         with open(self.filename, 'w') as f:

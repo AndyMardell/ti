@@ -4,287 +4,19 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
-import re
 import subprocess
 import sys
 import tempfile
 from datetime import datetime, timedelta
 from collections import defaultdict
-
+from action import *
 import yaml
-from colorama import Fore
+import re
+import colors
+
 
 import time_store
-
-class TIError(Exception):
-    """Errors raised by TI."""
-
-
-class AlreadyOn(TIError):
-    """Already working on that task."""
-
-
-class NoEditor(TIError):
-    """No $EDITOR set."""
-
-
-class InvalidYAML(TIError):
-    """No $EDITOR set."""
-
-
-class NoTask(TIError):
-    """Not working on a task yet."""
-
-
-class BadTime(TIError):
-    """Time string can't be parsed."""
-
-
-class BadArguments(TIError):
-    """The command line arguments passed are not valid."""
-
-
-def color_string(color, text):
-    if use_color:
-        return color + text + Fore.RESET
-    else:
-        return text
-
-
-color_regex = re.compile("(\x9B|\x1B\\[)[0-?]*[ -\/]*[@-~]")
-
-
-def strip_color(str):
-    """Strip color from string."""
-    return color_regex.sub("", str)
-
-
-def len_color(str):
-    """Compute how long the color escape sequences in the string are."""
-    return len(str) - len(strip_color(str))
-
-
-def ljust_with_color(str, n):
-    """ljust string that might contain color."""
-    return str.ljust(n + len_color(str))
-
-
-def action_on(name, time):
-    data = store.load()
-    work = data['work']
-
-    if work and work[-1].is_current():
-        raise AlreadyOn("You are already working on %s. Stop it or use a "
-                        "different sheet." % (yellow(work[-1].get_name()),))
-
-    #TODO: work directly on timelog objects here
-    entry = {
-        'name': name,
-        'start': time,
-    }
-
-    work.append(time_store.TimeLog(entry))
-    store.dump(data)
-
-    print('Start working on ' + color_string(Fore.GREEN, name) + '.')
-
-
-def action_fin(time, back_from_interrupt=True):
-    ensure_working()
-
-    data = store.load()
-
-    current = data['work'][-1]
-    current.json_item["end"] = time
-    store.dump(data)
-    print('So you stopped working on ' + color_string(Fore.RED, current.get_name()) + '.')
-
-    if back_from_interrupt and len(data['interrupt_stack']) > 0:
-        name = data['interrupt_stack'].pop().get_name()
-        store.dump(data)
-        action_on(name, time)
-        if len(data['interrupt_stack']) > 0:
-            print('You are now %d deep in interrupts.'
-                  % len(data['interrupt_stack']))
-        else:
-            print('Congrats, you\'re out of interrupts!')
-
-
-def action_interrupt(name, time):
-    ensure_working()
-
-    action_fin(time, back_from_interrupt=False)
-
-    data = store.load()
-    if 'interrupt_stack' not in data:
-        data['interrupt_stack'] = []
-    interrupt_stack = data['interrupt_stack']
-
-    interrupted = data['work'][-1]
-    interrupt_stack.append(interrupted)
-    store.dump(data)
-
-    action_on('interrupt: ' + color_string(Fore.GREEN, name), time)
-    print('You are now %d deep in interrupts.' % len(interrupt_stack))
-
-
-def action_note(content):
-    ensure_working()
-
-    data = store.load()
-    current = data['work'][-1]
-
-    if 'notes' not in current:
-        current['notes'] = [content]
-    else:
-        current['notes'].append(content)
-
-    store.dump(data)
-
-    print('Yep, noted to ' + color_string(Fore.YELLOW, current.get_name()) + '.')
-
-
-def action_tag(tags):
-    ensure_working()
-
-    data = store.load()
-    current = data['work'][-1]
-
-    current['tags'] = set(current.get('tags') or [])
-    current['tags'].update(tags)
-    current['tags'] = list(current['tags'])
-
-    store.dump(data)
-
-    tag_count = len(tags)
-    print("Okay, tagged current work with %d tag%s."
-          % (tag_count, "s" if tag_count > 1 else ""))
-
-
-def action_status():
-    ensure_working()
-
-    data = store.load()
-    current = data['work'][-1]
-
-    start_time = current.get_start()
-    diff = timegap(start_time, datetime.utcnow())
-
-    print('You have been working on {0} for {1}.'.format(
-        color_string(Fore.GREEN, current.get_name()), diff))
-
-
-def action_log(period):
-    data = store.load()
-    work = data['work'] + data['interrupt_stack']
-    log = defaultdict(lambda: {'delta': timedelta()})
-    current = None
-
-    for item in work:
-        log[item.get_name()]["delta"] = item.get_delta()
-        if item.is_current():
-            current = item.get_name()
-
-    name_col_len = 0
-
-    for name, item in log.items():
-        name_col_len = max(name_col_len, len(strip_color(name)))
-
-        secs = item['delta'].total_seconds()
-        tmsg = []
-
-        if secs > 3600:
-            hours = int(secs / 3600)
-            secs -= hours * 3600
-            tmsg.append(str(hours) + ' hour' + ('s' if hours > 1 else ''))
-
-        if secs > 60:
-            mins = int(secs / 60)
-            secs -= mins * 60
-            tmsg.append(str(mins) + ' minute' + ('s' if mins > 1 else ''))
-
-        if secs:
-            tmsg.append(str(secs) + ' second' + ('s' if secs > 1 else ''))
-
-        log[name]['tmsg'] = ', '.join(tmsg)[::-1].replace(',', '& ', 1)[::-1]
-
-    for name, item in sorted(log.items(), key=(lambda x: x[1]), reverse=True):
-        print(ljust_with_color(name, name_col_len), ' ∙∙ ', item['tmsg'],
-              end=' ← working\n' if current == name else '\n')
-
-
-def action_edit():
-    if "EDITOR" not in os.environ:
-        raise NoEditor("Please set the 'EDITOR' environment variable")
-
-    data = store.load()
-    yml = yaml.safe_dump(data, default_flow_style=False, allow_unicode=True)
-
-    cmd = os.getenv('EDITOR')
-    fd, temp_path = tempfile.mkstemp(prefix='ti.')
-    with open(temp_path, "r+") as f:
-        f.write(yml.replace('\n- ', '\n\n- '))
-        f.seek(0)
-        subprocess.check_call(cmd + ' ' + temp_path, shell=True)
-        yml = f.read()
-        f.truncate()
-        f.close
-
-    os.close(fd)
-    os.remove(temp_path)
-
-    try:
-        data = yaml.load(yml)
-    except:
-        raise InvalidYAML("Oops, that YAML doesn't appear to be valid!")
-
-    store.dump(data)
-
-
-def is_working():
-    data = store.load()
-    return data.get('work') and data['work'][-1].is_current()
-
-
-def ensure_working():
-    if is_working():
-        return
-
-    raise NoTask("For all I know, you aren't working on anything. "
-                 "I don't know what to do.\n"
-                 "See `ti -h` to know how to start working.")
-
-
-def to_datetime(timestr):
-    return parse_engtime(timestr).isoformat() + 'Z'
-
-
-def parse_engtime(timestr):
-
-    now = datetime.utcnow()
-    if not timestr or timestr.strip() == 'now':
-        return now
-
-    match = re.match(r'(\d+|a) \s* (s|secs?|seconds?) \s+ ago $',
-                     timestr, re.X)
-    if match is not None:
-        n = match.group(1)
-        seconds = 1 if n == 'a' else int(n)
-        return now - timedelta(seconds=seconds)
-
-    match = re.match(r'(\d+|a) \s* (mins?|minutes?) \s+ ago $', timestr, re.X)
-    if match is not None:
-        n = match.group(1)
-        minutes = 1 if n == 'a' else int(n)
-        return now - timedelta(minutes=minutes)
-
-    match = re.match(r'(\d+|a|an) \s* (hrs?|hours?) \s+ ago $', timestr, re.X)
-    if match is not None:
-        n = match.group(1)
-        hours = 1 if n in ['a', 'an'] else int(n)
-        return now - timedelta(hours=hours)
-
-    raise BadTime("Don't understand the time %r" % (timestr,))
+from ti_exceptions import *
 
 
 def timegap(start_time, end_time):
@@ -339,7 +71,7 @@ def parse_args(argv=sys.argv):
         if not tail:
             raise BadArguments("Need the name of whatever you are working on.")
 
-        fn = action_on
+        fn = TiActionOn(colors.TiColorText(use_color))
         args = {
             'name': tail[0],
             'time': to_datetime(' '.join(tail[1:])),
@@ -385,6 +117,39 @@ def parse_args(argv=sys.argv):
         raise BadArguments("I don't understand %r" % (head,))
 
     return fn, args
+
+
+def to_datetime(timestr):
+    return parse_engtime(timestr).isoformat() + 'Z'
+
+
+def parse_engtime(timestr):
+
+    now = datetime.utcnow()
+    if not timestr or timestr.strip() == 'now':
+        return now
+
+    match = re.match(r'(\d+|a) \s* (s|secs?|seconds?) \s+ ago $',
+                     timestr, re.X)
+    if match is not None:
+        n = match.group(1)
+        seconds = 1 if n == 'a' else int(n)
+        return now - timedelta(seconds=seconds)
+
+    match = re.match(r'(\d+|a) \s* (mins?|minutes?) \s+ ago $', timestr, re.X)
+    if match is not None:
+        n = match.group(1)
+        minutes = 1 if n == 'a' else int(n)
+        return now - timedelta(minutes=minutes)
+
+    match = re.match(r'(\d+|a|an) \s* (hrs?|hours?) \s+ ago $', timestr, re.X)
+    if match is not None:
+        n = match.group(1)
+        hours = 1 if n in ['a', 'an'] else int(n)
+        return now - timedelta(hours=hours)
+
+    raise BadTime("Don't understand the time %r" % (timestr,))
+
 
 
 store = time_store.JsonStore(os.getenv('SHEET_FILE', None) or
