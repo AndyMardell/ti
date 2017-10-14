@@ -65,6 +65,7 @@ class TiActionInterrupt(TiWorkingAction):
         store.start_work('interrupt: ' + self.ti_colors.color_string(Fore.GREEN, args["name"]), args["time"])
         print('You are now %d deep in interrupts.' % len(interrupt_data))
 
+
 class TiActionSatus(TiWorkingAction):
     def _run(self, store,  work_data, interrupt_data, args):
         current = store.get_current_item()
