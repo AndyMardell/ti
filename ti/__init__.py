@@ -78,7 +78,7 @@ def parse_args(argv=sys.argv):
         }
 
     elif head in ['f', 'fin']:
-        fn = action_fin
+        fn = TiActionFin(colors.TiColorText(use_color))
         args = {'time': to_datetime(' '.join(tail))}
 
     elif head in ['s', 'status']:

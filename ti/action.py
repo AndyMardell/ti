@@ -52,22 +52,19 @@ class TiActionOn(TiNotWorkingAction):
 class TiActionFin(TiWorkingAction):
     def _run(self, store,  work_data, interrupt_data, args):
 
-        data = store.load()
+        current = work_data[-1]
+        current.json_item["end"] = args["time"]
+        print('So you stopped working on ' + self.ti_colors.color_string(Fore.RED, current.get_name()) + '.')
 
-        current = data['work'][-1]
-        current.json_item["end"] = time
-        store.dump(data)
-        print('So you stopped working on ' + color_string(Fore.RED, current.get_name()) + '.')
-
-        if back_from_interrupt and len(data['interrupt_stack']) > 0:
-            name = data['interrupt_stack'].pop().get_name()
-            store.dump(data)
-            action_on(name, time)
-            if len(data['interrupt_stack']) > 0:
+        if len(interrupt_data) > 0:
+            name = interrupt_data.pop().get_name()
+            action_on(name, args["time"])
+            if len(interrupt_data) > 0:
                 print('You are now %d deep in interrupts.'
-                      % len(data['interrupt_stack']))
+                      % len(interrupt_data))
             else:
                 print('Congrats, you\'re out of interrupts!')
+        store.dump(work_data, interrupt_data)
 
 
 
