@@ -11,6 +11,7 @@ class TiAction(object):
         data = ti_store.load()
         work_data = data['work']
         interrupt_data = data['interrupt_stack']
+        self._verify_status(work_data, interrupt_data)
         self._run(ti_store, work_data, interrupt_data, args)
 
     def _run(self, ti_store, work_data, interrupt_data, args):
@@ -22,11 +23,10 @@ class TiAction(object):
 
 class TiWorkingAction(TiAction):
     def _verify_status(self, work_data, interrupt_data):
-        if work_data.get('work') and work_data['work'][-1].is_current():
+        if work_data and work_data[-1].is_current():
             return
         raise NoTask("For all I know, you aren't working on anything. "
-                     "I don't know what to do.\n"
-                     "See `ti -h` to know how to start working.")
+                     "I don't know what to do.\n"                     "See `ti -h` to know how to start working.")
 
 
 class TiNotWorkingAction(TiAction):
