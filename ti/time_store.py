@@ -7,6 +7,8 @@ import os
 class JsonStore(object):
     def __init__(self, filename):
         self.filename = filename
+        self.work_data = None
+        self.interrupt_data = None
 
     def load(self):
 
@@ -24,18 +26,42 @@ class JsonStore(object):
         for log in json_data["interrupt_stack"]:
             time_data["interrupt_stack"].append(TimeLog(log))
 
+        self.work_data = time_data["work"]
+        self.interrupt_data = time_data["interrupt_stack"]
         return time_data
 
-    def dump(self, work_data, interrupt_data):
+    def dump(self):
         json_data = {'work': [], 'interrupt_stack': []}
-        for log in work_data:
+        for log in self.work_data:
             json_data["work"].append(log.json_item)
 
-        for log in interrupt_data:
+        for log in self.interrupt_data:
             json_data["interrupt_stack"].append(log.json_item)
 
         with open(self.filename, 'w') as f:
             json.dump(json_data, f, separators=(',', ': '), indent=2)
+
+    def start_work(self, name, time):
+        entry = {
+            'name': name,
+            'start': time,
+        }
+        self.work_data.append(TimeLog(entry))
+        self.dump()
+
+    def end_work(self, time):
+        current = self.work_data[-1]
+        current.json_item["end"] = time
+        self.dump()
+
+    def add_interruption(self):
+        interrupted = self.work_data[-1]
+        self.interrupt_data.append(interrupted)
+        self.dump()
+
+    def get_current_item(self):
+        current = self.work_data[-1]
+        return current
 
 
 class TimeLog(object):

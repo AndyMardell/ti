@@ -107,7 +107,7 @@ def parse_args(argv=sys.argv):
         if not tail:
             raise BadArguments("Need the name of whatever you are working on.")
 
-        fn = action_interrupt
+        fn = TiActionInterrupt(colors.TiColorText(use_color))
         args = {
             'name': tail[0],
             'time': to_datetime(' '.join(tail[1:])),

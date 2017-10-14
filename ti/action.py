@@ -29,7 +29,6 @@ class TiWorkingAction(TiAction):
                      "I don't know what to do.\n"                     "See `ti -h` to know how to start working.")
 
 
-
 class TiNotWorkingAction(TiAction):
     def _verify_status(self, work_data, interrupt_data):
         if work_data and work_data[-1].is_current():
@@ -39,50 +38,32 @@ class TiNotWorkingAction(TiAction):
 
 class TiActionOn(TiNotWorkingAction):
     def _run(self, store,  work_data, interrupt_data, args):
-        entry = {
-            'name': args["name"],
-            'start': args["time"],
-        }
-
-        work_data.append(time_store.TimeLog(entry))
-        store.dump(work_data, interrupt_data)
-
+        store.start_work(args["name"], args["time"])
         print('Start working on ' + self.ti_colors.color_string(Fore.GREEN, args["name"]) + '.')
 
 
 class TiActionFin(TiWorkingAction):
     def _run(self, store,  work_data, interrupt_data, args):
-
-        current = work_data[-1]
-        current.json_item["end"] = args["time"]
-        print('So you stopped working on ' + self.ti_colors.color_string(Fore.RED, current.get_name()) + '.')
+        current_task = store.get_current_item()
+        store.end_work(args["time"])
+        print('So you stopped working on ' + self.ti_colors.color_string(Fore.RED, current_task.get_name()) + '.')
 
         if len(interrupt_data) > 0:
             name = interrupt_data.pop().get_name()
-            action_on(name, args["time"])
+            store.start_work(name, args["time"])
             if len(interrupt_data) > 0:
                 print('You are now %d deep in interrupts.'
                       % len(interrupt_data))
             else:
                 print('Congrats, you\'re out of interrupts!')
-        store.dump(work_data, interrupt_data)
 
-def action_interrupt(name, time):
-    ensure_working()
 
-    action_fin(time, back_from_interrupt=False)
-
-    data = store.load()
-    if 'interrupt_stack' not in data:
-        data['interrupt_stack'] = []
-    interrupt_stack = data['interrupt_stack']
-
-    interrupted = data['work'][-1]
-    interrupt_stack.append(interrupted)
-    store.dump(data)
-
-    action_on('interrupt: ' + color_string(Fore.GREEN, name), time)
-    print('You are now %d deep in interrupts.' % len(interrupt_stack))
+class TiActionInterrupt(TiWorkingAction):
+    def _run(self, store,  work_data, interrupt_data, args):
+        store.end_work(args["time"])
+        store.add_interruption()
+        store.start_work('interrupt: ' + self.ti_colors.color_string(Fore.GREEN, args["name"]), args["time"])
+        print('You are now %d deep in interrupts.' % len(interrupt_data))
 
 
 def action_note(content):
