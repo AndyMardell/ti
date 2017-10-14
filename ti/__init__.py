@@ -38,7 +38,7 @@ def parse_args(argv=sys.argv):
         raise BadArguments()
 
     elif head in ['e', 'edit']:
-        fn = action_edit
+        fn = TiActionEdit(text_color)
         args = {}
 
     elif head in ['o', 'on']:

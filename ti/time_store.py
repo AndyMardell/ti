@@ -11,13 +11,7 @@ class JsonStore(object):
         self.interrupt_data = None
 
     def load(self):
-
-        if os.path.exists(self.filename):
-            with open(self.filename) as f:
-                json_data = json.load(f)
-
-        else:
-            json_data = {'work': [], 'interrupt_stack': []}
+        json_data = self.load_json()
 
         time_data = {'work': [], 'interrupt_stack': []}
         for log in json_data["work"]:
@@ -38,8 +32,20 @@ class JsonStore(object):
         for log in self.interrupt_data:
             json_data["interrupt_stack"].append(log.json_item)
 
+        self.dump_json(json_data)
+
+    def dump_json(self, json_data):
         with open(self.filename, 'w') as f:
             json.dump(json_data, f, separators=(',', ': '), indent=2)
+
+    def load_json(self):
+        if os.path.exists(self.filename):
+            with open(self.filename) as f:
+                json_data = json.load(f)
+        else:
+            json_data = {'work': [], 'interrupt_stack': []}
+
+        return json_data
 
     def start_work(self, name, time):
         entry = {

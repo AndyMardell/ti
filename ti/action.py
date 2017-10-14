@@ -8,6 +8,10 @@ from datetime import timedelta
 from utils import *
 from collections import defaultdict
 import colors
+import yaml
+import os
+import subprocess
+import tempfile
 
 
 class TiAction(object):
@@ -138,45 +142,30 @@ class TiActionTag(TiWorkingAction):
               % (tag_count, "s" if tag_count > 1 else ""))
 
 
-def action_edit():
-    if "EDITOR" not in os.environ:
-        raise NoEditor("Please set the 'EDITOR' environment variable")
+class TiActionEdit(TiAction):
+    def _run(self, store,  work_data, interrupt_data, args):
+        if "EDITOR" not in os.environ:
+            raise NoEditor("Please set the 'EDITOR' environment variable")
 
-    data = store.load()
-    yml = yaml.safe_dump(data, default_flow_style=False, allow_unicode=True)
+        data = store.load_json()
+        yml = yaml.safe_dump(data, default_flow_style=False, allow_unicode=True)
 
-    cmd = os.getenv('EDITOR')
-    fd, temp_path = tempfile.mkstemp(prefix='ti.')
-    with open(temp_path, "r+") as f:
-        f.write(yml.replace('\n- ', '\n\n- '))
-        f.seek(0)
-        subprocess.check_call(cmd + ' ' + temp_path, shell=True)
-        yml = f.read()
-        f.truncate()
-        f.close
+        cmd = os.getenv('EDITOR')
+        fd, temp_path = tempfile.mkstemp(prefix='ti.')
+        with open(temp_path, "r+") as f:
+            f.write(yml.replace('\n- ', '\n\n- '))
+            f.seek(0)
+            subprocess.check_call(cmd + ' ' + temp_path, shell=True)
+            yml = f.read()
+            f.truncate()
+            f.close
 
-    os.close(fd)
-    os.remove(temp_path)
+        os.close(fd)
+        os.remove(temp_path)
 
-    try:
-        data = yaml.load(yml)
-    except:
-        raise InvalidYAML("Oops, that YAML doesn't appear to be valid!")
+        try:
+            data = yaml.load(yml)
+        except:
+            raise InvalidYAML("Oops, that YAML doesn't appear to be valid!")
 
-    store.dump(data)
-
-
-def is_working():
-    data = store.load()
-    return data.get('work') and data['work'][-1].is_current()
-
-
-def ensure_working():
-    if is_working():
-        return
-
-    raise NoTask("For all I know, you aren't working on anything. "
-                 "I don't know what to do.\n"
-                 "See `ti -h` to know how to start working.")
-
-
+        store.dump_json(data)
