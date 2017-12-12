@@ -2,7 +2,6 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from ti_exceptions import *
 from colorama import Fore
 from datetime import timedelta
 from utils import *
