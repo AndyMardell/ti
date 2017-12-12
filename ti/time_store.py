@@ -65,7 +65,7 @@ class JsonStore(object):
         self.interrupt_data.append(interrupted)
         self.dump()
 
-    def get_current_item(self):
+    def get_recent_item(self):
         current = self.work_data[-1]
         return current
 
@@ -90,7 +90,7 @@ class TimeLog(object):
         else:
             return datetime.utcnow() - self.get_start()
 
-    def is_current(self):
+    def is_running(self):
         if 'end' in self.json_item:
             return False
         else:

@@ -33,7 +33,7 @@ class TiAction(object):
 
 class TiWorkingAction(TiAction):
     def _verify_status(self, work_data, interrupt_data):
-        if work_data and work_data[-1].is_current():
+        if work_data and work_data[-1].is_running():
             return
         raise NoTask("For all I know, you aren't working on anything. "
                      "I don't know what to do.\n"                     "See `ti -h` to know how to start working.")
@@ -41,7 +41,7 @@ class TiWorkingAction(TiAction):
 
 class TiIdleAction(TiAction):
     def _verify_status(self, work_data, interrupt_data):
-        if work_data and work_data[-1].is_current():
+        if work_data and work_data[-1].is_running():
             raise AlreadyOn("You are already working on %s. Stop it or use a "
                             "different sheet." % self.ti_colors.color_string(Fore.YELLOW, work_data[-1].get_name()))
 
@@ -54,7 +54,7 @@ class TiActionOn(TiIdleAction):
 
 class TiActionFin(TiWorkingAction):
     def _run(self, store,  work_data, interrupt_data, args):
-        current_task = store.get_current_item()
+        current_task = store.get_recent_item()
         store.end_work(args["time"])
         print('So you stopped working on ' + self.ti_colors.color_string(Fore.RED, current_task.get_name()) + '.')
 
@@ -78,7 +78,7 @@ class TiActionInterrupt(TiWorkingAction):
 
 class TiActionStatus(TiWorkingAction):
     def _run(self, store,  work_data, interrupt_data, args):
-        current = store.get_current_item()
+        current = store.get_recent_item()
         start_time = current.get_start()
         diff = timegap(start_time, datetime.utcnow())
 
@@ -90,7 +90,7 @@ class TiActionLog(TiAction):
     def _run(self, store,  work_data, interrupt_data, args):
         work = work_data + interrupt_data
         log = defaultdict(lambda: {'delta': timedelta()})
-        current = store.get_current_item().get_name()
+        current = store.get_recent_item()
 
         for item in work:
             log[item.get_name()]["delta"] = item.get_delta()
@@ -119,13 +119,13 @@ class TiActionLog(TiAction):
             log[name]['tmsg'] = ', '.join(tmsg)[::-1].replace(',', '& ', 1)[::-1]
 
         for name, item in sorted(log.items(), key=(lambda x: x[1]), reverse=True):
-            end = ' ← working' if current == name else ''
+            end = ' ← working' if current.get_name() == name and current.is_running() else ''
             print(colors.ljust_with_color(name, name_col_len), ' ∙∙ ', item['tmsg'], end)
 
 
 class TiActionNote(TiWorkingAction):
     def _run(self, store,  work_data, interrupt_data, args):
-        current = store.get_current_item()
+        current = store.get_recent_item()
         current.add_note(args["content"])
 
         print('Yep, noted to ' + self.ti_colors.color_string(Fore.YELLOW, current.get_name()) + '.')
@@ -133,7 +133,7 @@ class TiActionNote(TiWorkingAction):
 
 class TiActionTag(TiWorkingAction):
     def _run(self, store,  work_data, interrupt_data, args):
-        current = store.get_current_item()
+        current = store.get_recent_item()
         current.add_tags(args["tags"])
 
         tag_count = len(args["tags"])
