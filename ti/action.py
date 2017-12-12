@@ -68,6 +68,18 @@ class TiActionFin(TiWorkingAction):
                 print('Congrats, you\'re out of interrupts!')
 
 
+class TiActionSwitch(TiWorkingAction):
+    def _run(self, store,  work_data, interrupt_data, args):
+        if len(interrupt_data) > 0:
+            print(self.ti_colors.color_string(Fore.RED,"You must be out of interruptions to do this!"))
+        else:
+            current_task = store.get_recent_item()
+            store.end_work(args["time"])
+            print('So you stopped working on ' + self.ti_colors.color_string(Fore.RED, current_task.get_name()) + '.')
+            store.start_work(args["name"], args["time"])
+            print('And started working on ' + self.ti_colors.color_string(Fore.GREEN, args["name"]) + '.')
+
+
 class TiActionInterrupt(TiWorkingAction):
     def _run(self, store,  work_data, interrupt_data, args):
         store.end_work(args["time"])
