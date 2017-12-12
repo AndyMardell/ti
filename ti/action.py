@@ -91,9 +91,17 @@ class TiActionLog(TiAction):
         work = work_data + interrupt_data
         log = defaultdict(lambda: {'delta': timedelta()})
         current = store.get_recent_item()
+        sum = 0
+
+        if args["period"] is not None:
+            days_prior = timedelta(days=args["period"])
+        else:
+            days_prior = None
 
         for item in work:
-            log[item.get_name()]["delta"] = item.get_delta()
+            if days_prior is None or (item.get_end().date() >= (datetime.today() - days_prior).date()):
+                log[item.get_name()]["delta"] = item.get_delta()
+                sum += item.get_delta().total_seconds()
 
         name_col_len = 0
 
@@ -103,6 +111,7 @@ class TiActionLog(TiAction):
             secs = item['delta'].total_seconds()
             tmsg = []
 
+            # Needs to be refactored
             if secs > 3600:
                 hours = int(secs / 3600)
                 secs -= hours * 3600
@@ -121,6 +130,19 @@ class TiActionLog(TiAction):
         for name, item in sorted(log.items(), key=(lambda x: x[1]), reverse=True):
             end = ' ← working' if current.get_name() == name and current.is_running() else ''
             print(colors.ljust_with_color(name, name_col_len), ' ∙∙ ', item['tmsg'], end)
+
+        total_time_string = ""
+        if sum > 3600:
+            hours = int(sum / 3600)
+            sum -= hours * 3600
+            total_time_string += str(hours) + ' hour' + ('s ' if hours > 1 else ' ')
+
+        if sum > 60:
+            mins = int(sum / 60)
+            sum -= mins * 60
+            total_time_string += str(mins) + ' minute' + ('s ' if mins > 1 else ' ')
+
+        print("You worked in total: ", total_time_string)
 
 
 class TiActionNote(TiWorkingAction):
