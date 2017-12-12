@@ -1,4 +1,5 @@
 from datetime import datetime
+from ti_exceptions import *
 
 
 def parse_isotime(isotime):
@@ -30,3 +31,35 @@ def timegap(start_time, end_time):
         return 'about {} months'.format(mins / 43200)
     else:
         return 'more than a year'
+
+
+def to_datetime(timestr):
+    return parse_engtime(timestr).isoformat() + 'Z'
+
+
+def parse_engtime(timestr):
+
+    now = datetime.utcnow()
+    if not timestr or timestr.strip() == 'now':
+        return now
+
+    match = re.match(r'(\d+|a) \s* (s|secs?|seconds?) \s+ ago $',
+                     timestr, re.X)
+    if match is not None:
+        n = match.group(1)
+        seconds = 1 if n == 'a' else int(n)
+        return now - timedelta(seconds=seconds)
+
+    match = re.match(r'(\d+|a) \s* (mins?|minutes?) \s+ ago $', timestr, re.X)
+    if match is not None:
+        n = match.group(1)
+        minutes = 1 if n == 'a' else int(n)
+        return now - timedelta(minutes=minutes)
+
+    match = re.match(r'(\d+|a|an) \s* (hrs?|hours?) \s+ ago $', timestr, re.X)
+    if match is not None:
+        n = match.group(1)
+        hours = 1 if n in ['a', 'an'] else int(n)
+        return now - timedelta(hours=hours)
+
+    raise BadTime("Don't understand the time %r" % (timestr,))

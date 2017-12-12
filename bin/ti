@@ -27,16 +27,93 @@ Options:
 
 from __future__ import print_function
 import sys
-import ti
-import os
+from ti.action import *
+from ti.ti_exceptions import *
+import ti.time_store
+
+
+def parse_args(argv=sys.argv):
+    global use_color
+
+    if '--no-color' in argv:
+        use_color = False
+        argv.remove('--no-color')
+
+    text_color = colors.TiColorText(use_color)
+    # prog = argv[0]
+    if len(argv) == 1:
+        raise BadArguments("You must specify a command.")
+
+    head = argv[1]
+    tail = argv[2:]
+
+    if head in ['-h', '--help', 'h', 'help']:
+        raise BadArguments()
+
+    elif head in ['e', 'edit']:
+        fn = TiActionEdit(text_color)
+        args = {}
+
+    elif head in ['o', 'on']:
+        if not tail:
+            raise BadArguments("Need the name of whatever you are working on.")
+
+        fn = TiActionOn(text_color)
+        args = {
+            'name': tail[0],
+            'time': to_datetime(' '.join(tail[1:])),
+        }
+
+    elif head in ['f', 'fin']:
+        fn = TiActionFin(text_color)
+        args = {'time': to_datetime(' '.join(tail))}
+
+    elif head in ['s', 'status']:
+        fn = TiActionStatus(text_color)
+        args = {}
+
+    elif head in ['l', 'log']:
+        fn = TiActionLog(text_color)
+        args = {'period': tail[0] if tail else None}
+
+    elif head in ['t', 'tag']:
+        if not tail:
+            raise BadArguments("Please provide at least one tag to add.")
+
+        fn = TiActionTag(text_color)
+        args = {'tags': tail}
+
+    elif head in ['n', 'note']:
+        if not tail:
+            raise BadArguments("Please provide some text to be noted.")
+
+        fn = TiActionNote(text_color)
+        args = {'content': ' '.join(tail)}
+
+    elif head in ['i', 'interrupt']:
+        if not tail:
+            raise BadArguments("Need the name of whatever you are working on.")
+
+        fn = TiActionInterrupt(text_color)
+        args = {
+            'name': tail[0],
+            'time': to_datetime(' '.join(tail[1:])),
+        }
+
+    else:
+        raise BadArguments("I don't understand %r" % (head,))
+
+    return fn, args
+
 
 try:
     store = ti.time_store.JsonStore(os.getenv('SHEET_FILE', None) or
                                  os.path.expanduser('~/.ti-sheet'))
-    fn, args = ti.parse_args()
-    #fn(**args)
+    use_color = True
+
+    fn, args = parse_args()
     fn.execute_action(store, args)
-except ti.TIError as e:
+except TIError as e:
     msg = str(e) if len(str(e)) > 0 else __doc__
     print(msg, file=sys.stderr)
     sys.exit(1)
