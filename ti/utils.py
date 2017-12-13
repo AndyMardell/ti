@@ -36,6 +36,26 @@ def timegap(start_time, end_time):
         return 'more than a year'
 
 
+def format_duration(duration):
+    tmsg = []
+
+    # Needs to be refactored
+    if duration > 3600:
+        hours = int(duration / 3600)
+        duration -= hours * 3600
+        tmsg.append(str(hours) + ' hour' + ('s' if hours > 1 else ''))
+
+    if duration > 60:
+        mins = int(duration / 60)
+        duration -= mins * 60
+        tmsg.append(str(mins) + ' minute' + ('s' if mins > 1 else ''))
+
+    if duration:
+        tmsg.append(str(duration) + ' second' + ('s' if duration > 1 else ''))
+
+    return ', '.join(tmsg)[::-1].replace(',', '& ', 1)[::-1]
+
+
 def to_datetime(timestr):
     return parse_engtime(timestr).isoformat() + 'Z'
 

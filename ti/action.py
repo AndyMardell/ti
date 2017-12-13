@@ -126,42 +126,13 @@ class TiActionLog(TiAction):
 
         for name, item in log.items():
             name_col_len = max(name_col_len, len(colors.strip_color(name)))
-
-            secs = item['delta'].total_seconds()
-            tmsg = []
-
-            # Needs to be refactored
-            if secs > 3600:
-                hours = int(secs / 3600)
-                secs -= hours * 3600
-                tmsg.append(str(hours) + ' hour' + ('s' if hours > 1 else ''))
-
-            if secs > 60:
-                mins = int(secs / 60)
-                secs -= mins * 60
-                tmsg.append(str(mins) + ' minute' + ('s' if mins > 1 else ''))
-
-            if secs:
-                tmsg.append(str(secs) + ' second' + ('s' if secs > 1 else ''))
-
-            log[name]['tmsg'] = ', '.join(tmsg)[::-1].replace(',', '& ', 1)[::-1]
+            log[name]['tmsg'] = format_duration(item['delta'].total_seconds())
 
         for name, item in sorted(log.items(), key=(lambda x: x[1]), reverse=True):
             end = ' ← working' if current.get_name() == name and current.is_running() else ''
             print(colors.ljust_with_color(name, name_col_len), ' ∙∙ ', item['tmsg'], end)
 
-        total_time_string = ""
-        if sum > 3600:
-            hours = int(sum / 3600)
-            sum -= hours * 3600
-            total_time_string += str(hours) + ' hour' + ('s ' if hours > 1 else ' ')
-
-        if sum > 60:
-            mins = int(sum / 60)
-            sum -= mins * 60
-            total_time_string += str(mins) + ' minute' + ('s ' if mins > 1 else ' ')
-
-        print("You worked in total: ", total_time_string)
+        print("You worked in total: ", format_duration(sum))
 
 
 class TiActionNote(TiWorkingAction):
