@@ -3,7 +3,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from colorama import Fore
-from datetime import timedelta
 from utils import *
 from collections import defaultdict
 import colors
@@ -16,6 +15,9 @@ import tempfile
 class TiAction(object):
     def __init__(self, ti_colors):
         self.ti_colors = ti_colors
+        # Get config from environment variable, or use 8 hours as default
+        self.work_per_day = (int(os.getenv("TI_WORK_PER_DAY")) if os.getenv('TI_WORK_PER_DAY') else 28800)
+        self.workdays = os.getenv("TI_WORKDAYS").split(",") if os.getenv("TI_WORKDAYS") else ["0", "1", "2", "3", "4"]
 
     def execute_action(self, ti_store, args):
         data = ti_store.load()
@@ -111,17 +113,24 @@ class TiActionLog(TiAction):
         log = defaultdict(lambda: {'delta': timedelta()})
         current = store.get_recent_item()
         sum = 0
+        time_required = 0
 
         if args["period"] is not None:
             days_prior = timedelta(days=args["period"])
         else:
             days_prior = None
 
+        counted_days = []
         for item in work:
             if days_prior is None or (item.get_end().date() >= (datetime.today() - days_prior).date()):
                 log[item.get_name()]["delta"] = item.get_delta()
                 sum += item.get_delta().total_seconds()
-
+                if item.get_end().date() not in counted_days\
+                        and self.work_per_day is not None\
+                        and str(item.get_end().date().weekday()) in self.workdays:
+                    time_required += self.work_per_day
+                    # This doesn't work if a log crosses dates. (e.g. starts on the first january and ends on the second
+                    counted_days.append(item.get_end().date())
         name_col_len = 0
 
         for name, item in log.items():
@@ -132,7 +141,12 @@ class TiActionLog(TiAction):
             end = ' ← working' if current.get_name() == name and current.is_running() else ''
             print(colors.ljust_with_color(name, name_col_len), ' ∙∙ ', item['tmsg'], end)
 
+        left_work = time_required - sum
+
         print("You worked in total: ", format_duration(sum))
+        if self.work_per_day is not None:
+            print(("You still need to work: " if left_work > 0 else "You worked more than necessary: ")
+                  + format_duration(abs(left_work)))
 
 
 class TiActionNote(TiWorkingAction):
