@@ -37,23 +37,14 @@ def timegap(start_time, end_time):
 
 
 def format_duration(duration):
-    tmsg = []
+    f_minutes, f_seconds = divmod(duration, 60)
+    f_hours, f_minutes = divmod(f_minutes, 60)
 
-    # Needs to be refactored
-    if duration > 3600:
-        hours = int(duration / 3600)
-        duration -= hours * 3600
-        tmsg.append(str(hours) + ' hour' + ('s' if hours > 1 else ''))
-
-    if duration > 60:
-        mins = int(duration / 60)
-        duration -= mins * 60
-        tmsg.append(str(mins) + ' minute' + ('s' if mins > 1 else ''))
-
-    if duration:
-        tmsg.append(str(duration) + ' second' + ('s' if duration > 1 else ''))
-
-    return ', '.join(tmsg)[::-1].replace(',', '& ', 1)[::-1]
+    msg = []
+    (msg.append(str(int(f_hours)) + " hours") if f_hours >= 1 else None)
+    (msg.append(str(int(f_minutes)) + " minutes") if f_minutes >= 1 else None)
+    (msg.append(str(int(f_seconds)) + " seconds") if f_seconds >= 1 else None)
+    return ', '.join(msg)[::-1].replace(',', '& ', 1)[::-1]
 
 
 def to_datetime(timestr):
