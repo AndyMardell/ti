@@ -68,6 +68,10 @@ def parse_args(argv=sys.argv):
         fn = TiActionFin(text_color)
         args = {'time': to_datetime(' '.join(tail))}
 
+    elif head in ['r', 'resume']:
+        fn = TiActionResume(text_color)
+        args = {'time': to_datetime(' '.join(tail))}
+
     elif head in ['sw', 'switch']:
         if not tail:
             raise BadArguments("Need the name of whatever you are working on.")

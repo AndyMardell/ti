@@ -68,6 +68,11 @@ class TiActionFin(TiWorkingAction):
                 print('Congrats, you\'re out of interrupts!')
 
 
+class TiActionResume(TiIdleAction):
+    def _run(self, store, work_data, interrupt_data, args):
+        pass
+
+
 class TiActionSwitch(TiWorkingAction):
     def _run(self, store,  work_data, interrupt_data, args):
         if len(interrupt_data) > 0:
