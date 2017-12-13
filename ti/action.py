@@ -70,7 +70,9 @@ class TiActionFin(TiWorkingAction):
 
 class TiActionResume(TiIdleAction):
     def _run(self, store, work_data, interrupt_data, args):
-        pass
+        last_task = store.get_recent_item()
+        store.start_work(last_task.get_name(), args["time"])
+        print('Start working on ' + self.ti_colors.color_string(Fore.GREEN, last_task.get_name()) + '.')
 
 
 class TiActionSwitch(TiWorkingAction):
