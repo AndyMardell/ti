@@ -118,6 +118,12 @@ def parse_args(argv=sys.argv):
             'time': to_datetime(' '.join(tail[1:])),
         }
 
+    elif head in ['archive']:
+        fn = TiActionArchive(text_color)
+        args={
+            'archive_dir': os.path.expanduser("~/.ti-archive")
+        }
+
     else:
         raise BadArguments("I don't understand %r" % (head,))
 

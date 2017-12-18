@@ -10,6 +10,7 @@ import yaml
 import os
 import subprocess
 import tempfile
+import shutil
 
 
 class TiAction(object):
@@ -194,3 +195,16 @@ class TiActionEdit(TiAction):
             raise InvalidYAML("Oops, that YAML doesn't appear to be valid!")
 
         store.dump_json(data)
+
+
+class TiActionArchive(TiAction):
+    def _run(self, store, work_data, interrupt_data, args):
+        archive_dir = args["archive_dir"]
+        if not os.path.exists(archive_dir):
+            os.mkdir(archive_dir)
+        archive_file = os.path.join(archive_dir, os.path.basename(store.filename) + "-" + str(datetime.today().date()))
+        if not os.path.exists(archive_file):
+            shutil.move(store.filename, archive_file)
+            print(self.ti_colors.color_string(Fore.GREEN, "Archived sheet to ") + "'" + archive_file + "'")
+        else:
+            print(self.ti_colors.color_string(Fore.RED, "Archive already exists for ") + "'" + archive_file + "' ")
