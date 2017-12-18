@@ -125,7 +125,7 @@ class TiActionLog(TiAction):
             if days_prior is None or (item.get_end().date() >= (datetime.today() - days_prior).date()):
                 log[item.get_name()]["delta"] = item.get_delta()
                 sum += item.get_delta().total_seconds()
-                if item.get_end().date() not in counted_days\
+                if item.get_start().date() not in counted_days\
                         and self.work_per_day is not None\
                         and str(item.get_end().date().weekday()) in self.workdays:
                     time_required += self.work_per_day
