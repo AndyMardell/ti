@@ -136,7 +136,21 @@ class TiActionLog(TiAction):
 
         for name, item in log.items():
             name_col_len = max(name_col_len, len(colors.strip_color(name)))
-            log[name]['tmsg'] = format_duration(item['delta'].total_seconds())
+            secs = item['delta'].total_seconds()
+            tmsg = []
+
+            if secs > 3600:
+                hours = int(secs // 3600)
+                secs -= hours * 3600
+                tmsg.append(str(hours) + ' hour' + ('s' if hours > 1 else ''))
+
+            if secs > 60:
+                mins = int(secs // 60)
+                secs -= mins * 60
+                tmsg.append(str(mins) + ' minute' + ('s' if mins > 1 else ''))
+
+            log[name]['tmsg'] = ', '.join(tmsg)[::-1].replace(',', '& ', 1)[::-1]
+
 
         for name, item in sorted(log.items(), key=(lambda x: x[1]), reverse=True):
             end = ' ← working' if current.get_name() == name and current.is_running() else ''
