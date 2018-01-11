@@ -43,7 +43,6 @@ def format_duration(duration):
     msg = []
     (msg.append(str(int(f_hours)) + " hours") if f_hours >= 1 else None)
     (msg.append(str(int(f_minutes)) + " minutes") if f_minutes >= 1 else None)
-    (msg.append(str(int(f_seconds)) + " seconds") if f_seconds >= 1 else None)
     return ', '.join(msg)[::-1].replace(',', '& ', 1)[::-1]
 
 
